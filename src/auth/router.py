@@ -1,18 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from src.auth import service
 from src.auth.dependencies import get_current_user
 from src.auth.models import User
-from src.auth.schemas import Token, UserCreate, UserRead
+from src.auth.schemas import RefreshRequest, Token, UserCreate, UserRead
 from src.auth.security import create_access_token
 from src.database import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=UserRead,
+@router.post("/register", response_model=Token,
              status_code=status.HTTP_201_CREATED)
 def register(data: UserCreate, db: Session = Depends(get_db)):
     if service.get_user_by_email(db, data.email):
@@ -20,7 +20,10 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this email already exists",
         )
-    return service.register_user(db, data)
+    user = service.register_user(db, data)
+    access_token = create_access_token(subject=user.email, role=user.role.value)
+    refresh_token = service.create_refresh_token(db, user)
+    return Token(access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post("/login", response_model=Token)
@@ -36,8 +39,38 @@ def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    token = create_access_token(subject=user.email, role=user.role.value)
-    return Token(access_token=token)
+    access_token = create_access_token(subject=user.email, role=user.role.value)
+    refresh_token = service.create_refresh_token(db, user)
+    return Token(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.post("/refresh", response_model=Token)
+def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
+    token = service.get_active_refresh_token(db, data.refresh_token)
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = service.get_user_by_id(db, token.user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(subject=user.email, role=user.role.value)
+    new_refresh_token = service.rotate_refresh_token(db, token, user)
+    return Token(access_token=access_token, refresh_token=new_refresh_token)
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(data: RefreshRequest, db: Session = Depends(get_db)):
+    token = service.get_active_refresh_token(db, data.refresh_token)
+    if token is not None:
+        service.revoke_refresh_token(db, token)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/me", response_model=UserRead)
