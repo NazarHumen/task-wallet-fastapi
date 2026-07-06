@@ -2,9 +2,19 @@ from fastapi import FastAPI
 
 from src.auth.router import router as auth_router
 from fastapi.responses import RedirectResponse
+from src.admin_panel import setup_admin
+
+from src.database import engine
+
 app = FastAPI(title="TaskWallet")
+
+# SQLAdmin
+setup_admin(app, engine)
+
 
 @app.get("/")
 def root():
     return RedirectResponse(url="/docs")
+
+
 app.include_router(auth_router)
