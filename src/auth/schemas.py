@@ -1,7 +1,8 @@
+import re
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from src.auth.models import Role
 
@@ -9,7 +10,30 @@ from src.auth.models import Role
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
-    role: Role = Role.EXECUTOR
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        value = value.strip().lower()
+        if not value.isascii():
+            raise ValueError("Email must contain only Latin characters")
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, value: str) -> str:
+        if not re.search(r"[A-Z]", value):
+            raise ValueError(
+                "Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", value):
+            raise ValueError(
+                "Password must contain at least one lowercase letter")
+        if not re.search(r"\d", value):
+            raise ValueError("Password must contain at least one digit")
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>\-_]', value):
+            raise ValueError(
+                "Password must contain at least one special character")
+        return value
 
 
 class UserRead(BaseModel):

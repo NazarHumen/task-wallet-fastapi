@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.auth import security
-from src.auth.models import RefreshToken, User
+from src.auth.models import RefreshToken, User, Role
 from src.auth.schemas import UserCreate
 from src.config import settings
 
@@ -21,7 +21,7 @@ def register_user(db: Session, data: UserCreate) -> User:
     user = User(
         email=data.email,
         hashed_password=security.hash_password(data.password),
-        role=data.role,
+        role=Role.EXECUTOR,
     )
     db.add(user)
     db.commit()
@@ -30,7 +30,8 @@ def register_user(db: Session, data: UserCreate) -> User:
 
 
 def authenticate_user(db: Session, email: str, password: str) -> User | None:
-    user = get_user_by_email(db, email)
+    # Normalize the same way UserCreate does, so login is case/space-insensitive.
+    user = get_user_by_email(db, email.strip().lower())
     if user is None:
         return None
     if not security.verify_password(password, user.hashed_password):
@@ -44,14 +45,15 @@ def create_refresh_token(db: Session, user: User) -> str:
         user_id=user.id,
         token_hash=security.hash_refresh_token(raw_token),
         expires_at=datetime.now(timezone.utc)
-        + timedelta(days=settings.refresh_token_expire_days),
+                   + timedelta(days=settings.refresh_token_expire_days),
     )
     db.add(token)
     db.commit()
     return raw_token
 
 
-def get_active_refresh_token(db: Session, raw_token: str) -> RefreshToken | None:
+def get_active_refresh_token(db: Session,
+                             raw_token: str) -> RefreshToken | None:
     token_hash = security.hash_refresh_token(raw_token)
     token = db.scalar(
         select(RefreshToken).where(RefreshToken.token_hash == token_hash)
@@ -75,7 +77,7 @@ def rotate_refresh_token(db: Session, token: RefreshToken, user: User) -> str:
         user_id=user.id,
         token_hash=security.hash_refresh_token(raw_token),
         expires_at=datetime.now(timezone.utc)
-        + timedelta(days=settings.refresh_token_expire_days),
+                   + timedelta(days=settings.refresh_token_expire_days),
     )
     db.add(new_token)
     db.commit()
