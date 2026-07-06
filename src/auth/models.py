@@ -2,7 +2,15 @@ import enum
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Numeric, String
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database import Base
@@ -15,6 +23,13 @@ class Role(str, enum.Enum):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint("balance >= 0", name="ck_users_balance_non_negative"),
+        CheckConstraint(
+            "reserved_balance >= 0",
+            name="ck_users_reserved_balance_non_negative",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
@@ -23,7 +38,7 @@ class User(Base):
     balance: Mapped[Decimal] = mapped_column(Numeric(10, 2),
                                              default=Decimal("0"))
     reserved_balance: Mapped[Decimal] = mapped_column(Numeric(10, 2),
-                                              default=Decimal("0"))
+                                                      default=Decimal("0"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  default=lambda: datetime.now(
                                                      timezone.utc))
@@ -35,7 +50,8 @@ class RefreshToken(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True,
+                                            index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
