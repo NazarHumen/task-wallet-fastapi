@@ -1,7 +1,18 @@
 from sqladmin import ModelView
-from wtforms.validators import NumberRange, Email
+from wtforms.validators import NumberRange, Email, ValidationError
 
 from src.auth.models import User, RefreshToken
+from src.auth.validators import normalize_email
+
+
+def _normalize_email(form, field):
+    """Apply the shared email normalization, surfacing errors in the form."""
+    if not field.data:
+        return
+    try:
+        field.data = normalize_email(field.data)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
 
 
 class UserAdmin(ModelView, model=User):
@@ -13,7 +24,7 @@ class UserAdmin(ModelView, model=User):
     form_args = {
         "balance": {"validators": [NumberRange(min=0)]},
         "reserved_balance": {"validators": [NumberRange(min=0)]},
-        "email": {"validators": [Email()]},
+        "email": {"validators": [Email(), _normalize_email]},
     }
 
 

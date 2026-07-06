@@ -5,6 +5,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from src.auth.models import Role
+from src.auth.validators import normalize_email
 
 
 class UserCreate(BaseModel):
@@ -14,10 +15,7 @@ class UserCreate(BaseModel):
     @field_validator("email")
     @classmethod
     def normalize_email(cls, value: str) -> str:
-        value = value.strip().lower()
-        if not value.isascii():
-            raise ValueError("Email must contain only Latin characters")
-        return value
+        return normalize_email(value)
 
     @field_validator("password")
     @classmethod
