@@ -1,12 +1,12 @@
+from fastapi import FastAPI
 from sqladmin import Admin
 from sqlalchemy.engine import Engine
-from fastapi import FastAPI
-from src.auth.admin import UserAdmin, RefreshTokenAdmin
+
+from src.auth.admin import RefreshTokenAdmin, UserAdmin
 
 admin_views = [
     UserAdmin,
     RefreshTokenAdmin,
-
 ]
 
 

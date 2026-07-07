@@ -35,13 +35,15 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
     role: Mapped[Role] = mapped_column(Enum(Role), default=Role.EXECUTOR)
-    balance: Mapped[Decimal] = mapped_column(Numeric(10, 2),
-                                             default=Decimal("0"))
-    reserved_balance: Mapped[Decimal] = mapped_column(Numeric(10, 2),
-                                                      default=Decimal("0"))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
-                                                 default=lambda: datetime.now(
-                                                     timezone.utc))
+    balance: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2), default=Decimal("0")
+    )
+    reserved_balance: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2), default=Decimal("0")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 
 
 class RefreshToken(Base):
@@ -49,11 +51,13 @@ class RefreshToken(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    token_hash: Mapped[str] = mapped_column(String(64), unique=True,
-                                            index=True)
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    token_hash: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True
+    )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
-                                                 default=lambda: datetime.now(
-                                                     timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )

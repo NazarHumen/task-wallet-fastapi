@@ -1,7 +1,7 @@
 from sqladmin import ModelView
-from wtforms.validators import NumberRange, Email, ValidationError
+from wtforms.validators import Email, NumberRange, ValidationError
 
-from src.auth.models import User, RefreshToken
+from src.auth.models import RefreshToken, User
 from src.auth.validators import normalize_email
 
 
@@ -17,8 +17,14 @@ def _normalize_email(form, field):
 
 class UserAdmin(ModelView, model=User):
     can_create = False
-    column_list = [User.id, User.email, User.role, User.balance,
-                   User.reserved_balance, User.created_at]
+    column_list = [
+        User.id,
+        User.email,
+        User.role,
+        User.balance,
+        User.reserved_balance,
+        User.created_at,
+    ]
     # Password hash must never be editable from the admin panel.
     form_excluded_columns = [User.hashed_password]
     form_args = {
@@ -30,7 +36,11 @@ class UserAdmin(ModelView, model=User):
 
 class RefreshTokenAdmin(ModelView, model=RefreshToken):
     can_create = False
-    column_list = [RefreshToken.id, RefreshToken.user_id,
-                   RefreshToken.expires_at, RefreshToken.revoked,
-                   RefreshToken.created_at]
+    column_list = [
+        RefreshToken.id,
+        RefreshToken.user_id,
+        RefreshToken.expires_at,
+        RefreshToken.revoked,
+        RefreshToken.created_at,
+    ]
     form_excluded_columns = [RefreshToken.token_hash]
