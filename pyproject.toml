@@ -1,0 +1,18 @@
+[tool.ruff]
+line-length = 79
+target-version = "py312"
+
+extend-exclude = [
+    "migrations",
+    "settings.py",
+    "venv",
+    ".venv",
+    "__pycache__",
+    "alembic",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
