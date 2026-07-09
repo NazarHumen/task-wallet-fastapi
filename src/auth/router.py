@@ -7,7 +7,7 @@ from src.auth.dependencies import get_current_user
 from src.auth.models import User
 from src.auth.schemas import RefreshRequest, Token, UserCreate, UserRead
 from src.auth.security import create_access_token
-from src.database import get_db
+from src.db.database import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

@@ -3,7 +3,8 @@ from fastapi.responses import RedirectResponse
 
 from src.admin_panel import setup_admin
 from src.auth.router import router as auth_router
-from src.database import engine
+from src.db.database import engine
+from src.tasks.router import router as tasks_router
 
 app = FastAPI(title="TaskWallet")
 
@@ -17,3 +18,4 @@ def root():
 
 
 app.include_router(auth_router)
+app.include_router(tasks_router)

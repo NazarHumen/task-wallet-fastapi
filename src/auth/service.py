@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from src.auth import security
 from src.auth.models import RefreshToken, Role, User
 from src.auth.schemas import UserCreate
-from src.config import settings
+from src.db.config import settings
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:

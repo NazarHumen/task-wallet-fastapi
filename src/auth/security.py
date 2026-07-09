@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from pwdlib import PasswordHash
 
-from src.config import settings
+from src.db.config import settings
 
 _password_hash = PasswordHash.recommended()
 

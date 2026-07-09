@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.auth import security, service
 from src.auth.models import Role, User
-from src.database import get_db
+from src.db.database import get_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
