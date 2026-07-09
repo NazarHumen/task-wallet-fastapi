@@ -139,6 +139,11 @@ def approve_task(
     return task
 
 
+def delete_task(db: Session, task: Task) -> None:
+    db.delete(task)
+    db.commit()
+
+
 def cancel_task(db: Session, task: Task, manager: User) -> Task:
     manager = db.get(User, manager.id, with_for_update=True)
     manager.reserved_balance -= task.reward
