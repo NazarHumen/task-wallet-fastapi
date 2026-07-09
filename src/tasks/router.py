@@ -39,6 +39,15 @@ def list_tasks(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
+    if (
+        created_after is not None
+        and created_before is not None
+        and created_after > created_before
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="created_after must not be later than created_before",
+        )
     items, total = service.list_tasks(
         db,
         status=status_filter,
@@ -195,6 +204,32 @@ def approve_task(
             status_code=status.HTTP_409_CONFLICT, detail="Task has no assignee"
         )
     return service.approve_task(db, task, manager, executor)
+
+
+@router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    manager: User = Depends(require_role(Role.MANAGER)),
+):
+    task = service.get_task(db, task_id, for_update=True)
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+    if task.creator_id != manager.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not the creator of this task",
+        )
+    # Only terminal tasks can be deleted; the reward is already released, so
+    # removing the row cannot strand the manager's reserved balance.
+    if task.status not in (TaskStatus.CANCELLED, TaskStatus.COMPLETED):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only cancelled or completed tasks can be deleted",
+        )
+    service.delete_task(db, task)
 
 
 @router.post("/{task_id}/cancel", response_model=TaskRead)
