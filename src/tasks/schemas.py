@@ -7,6 +7,7 @@ from src.tasks.models import TaskStatus
 
 
 class TaskCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=2000)
     reward: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
