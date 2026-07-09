@@ -25,6 +25,8 @@ class UserAdmin(ModelView, model=User):
         User.reserved_balance,
         User.created_at,
     ]
+    column_searchable_list = [User.email]
+
     # Password hash must never be editable from the admin panel.
     form_excluded_columns = [User.hashed_password]
     form_args = {
