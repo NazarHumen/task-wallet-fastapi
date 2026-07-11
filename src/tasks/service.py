@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.auth.models import User
+from src.tags.models import Tag
 from src.tasks.models import Task, TaskStatus
 from src.tasks.schemas import TaskCreate, TaskUpdate
 
@@ -16,7 +17,9 @@ def get_task(
     return db.get(Task, task_id)
 
 
-def create_task(db: Session, creator: User, data: TaskCreate) -> Task | None:
+def create_task(
+    db: Session, creator: User, data: TaskCreate, tags: list[Tag]
+) -> Task | None:
     creator = db.get(User, creator.id, with_for_update=True)
     if creator.balance < data.reward:
         return None
@@ -28,6 +31,7 @@ def create_task(db: Session, creator: User, data: TaskCreate) -> Task | None:
         reward=data.reward,
         creator_id=creator.id,
         status=TaskStatus.OPEN,
+        tags=tags,
     )
     db.add(task)
     db.commit()
@@ -36,7 +40,11 @@ def create_task(db: Session, creator: User, data: TaskCreate) -> Task | None:
 
 
 def update_task(
-    db: Session, task: Task, creator: User, data: TaskUpdate
+    db: Session,
+    task: Task,
+    creator: User,
+    data: TaskUpdate,
+    tags: list[Tag] | None,
 ) -> Task | None:
     # `exclude_unset` distinguishes an omitted field from an explicit value,
     # so a PATCH only touches what the client actually sent.
@@ -60,6 +68,11 @@ def update_task(
         task.title = fields["title"]
     if "description" in fields:
         task.description = fields["description"]
+
+    # None means the client omitted tag_ids; a list (even empty) replaces the
+    # task's full tag set.
+    if tags is not None:
+        task.tags = tags
 
     db.commit()
     db.refresh(task)
