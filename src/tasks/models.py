@@ -11,9 +11,10 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.database import Base
+from src.tags.models import Tag
 
 
 class TaskStatus(str, enum.Enum):
@@ -52,4 +53,7 @@ class Task(Base):
         DateTime(timezone=True),
         default=None,
         onupdate=lambda: datetime.now(timezone.utc),
+    )
+    tags: Mapped[list[Tag]] = relationship(
+        secondary="task_tags", lazy="selectin"
     )
