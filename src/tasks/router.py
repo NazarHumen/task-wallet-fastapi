@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from src.auth.dependencies import get_current_user, require_role
 from src.auth.models import Role, User
 from src.db.database import get_db
+from src.tags import service as tag_service
 from src.tasks import service
 from src.tasks.models import TaskStatus
 from src.tasks.schemas import TaskCreate, TaskList, TaskRead, TaskUpdate
@@ -19,7 +20,13 @@ def create_task(
     db: Session = Depends(get_db),
     manager: User = Depends(require_role(Role.MANAGER)),
 ):
-    task = service.create_task(db, manager, data)
+    tags, missing = tag_service.resolve_tags(db, data.tag_ids)
+    if missing:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Unknown tag_ids: {missing}",
+        )
+    task = service.create_task(db, manager, data, tags)
     if task is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -101,7 +108,15 @@ def update_task(
             status_code=status.HTTP_409_CONFLICT,
             detail="Reward can only be changed while the task is open",
         )
-    updated = service.update_task(db, task, manager, data)
+    tags = None
+    if data.tag_ids is not None:
+        tags, missing = tag_service.resolve_tags(db, data.tag_ids)
+        if missing:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Unknown tag_ids: {missing}",
+            )
+    updated = service.update_task(db, task, manager, data, tags)
     if updated is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
