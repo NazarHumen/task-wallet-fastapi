@@ -3,12 +3,14 @@ from sqladmin import Admin
 from sqlalchemy.engine import Engine
 
 from src.auth.admin import RefreshTokenAdmin, UserAdmin
+from src.tags.admin import TagAdmin
 from src.tasks.admin import TaskAdmin
 
 admin_views = [
     UserAdmin,
     RefreshTokenAdmin,
     TaskAdmin,
+    TagAdmin,
 ]
 
 
