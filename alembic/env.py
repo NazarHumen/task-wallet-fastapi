@@ -8,6 +8,7 @@ from alembic import context
 from src.db.config import settings
 from src.db.database import Base
 import src.auth.models  # noqa: F401
+import src.tags.models  # noqa: F401
 import src.tasks.models  # noqa: F401
 
 # this is the Alembic Config object, which provides
