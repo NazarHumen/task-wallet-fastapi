@@ -7,6 +7,8 @@ from src.auth.models import User
 from src.tags.models import Tag
 from src.tasks.models import Task, TaskStatus
 from src.tasks.schemas import TaskCreate, TaskUpdate
+from src.transactions import service as tx_service
+from src.transactions.models import TransactionType
 
 
 def get_task(
@@ -34,6 +36,15 @@ def create_task(
         tags=tags,
     )
     db.add(task)
+    db.flush()  # Assigns task.id so the ledger entry can reference it.
+    tx_service.record_transaction(
+        db,
+        user=creator,
+        type=TransactionType.TASK_RESERVE,
+        amount=-data.reward,
+        balance_after=creator.balance,
+        task_id=task.id,
+    )
     db.commit()
     db.refresh(task)
     return task
@@ -63,6 +74,14 @@ def update_task(
             creator.balance += -delta
             creator.reserved_balance -= -delta
         task.reward = fields["reward"]
+        tx_service.record_transaction(
+            db,
+            user=creator,
+            type=TransactionType.TASK_RESERVE_ADJUST,
+            amount=-delta,
+            balance_after=creator.balance,
+            task_id=task.id,
+        )
 
     if "title" in fields:
         task.title = fields["title"]
@@ -147,6 +166,14 @@ def approve_task(
     manager.reserved_balance -= task.reward
     executor.balance += task.reward
     task.status = TaskStatus.COMPLETED
+    tx_service.record_transaction(
+        db,
+        user=executor,
+        type=TransactionType.TASK_PAYOUT,
+        amount=task.reward,
+        balance_after=executor.balance,
+        task_id=task.id,
+    )
     db.commit()
     db.refresh(task)
     return task
@@ -162,6 +189,14 @@ def cancel_task(db: Session, task: Task, manager: User) -> Task:
     manager.reserved_balance -= task.reward
     manager.balance += task.reward
     task.status = TaskStatus.CANCELLED
+    tx_service.record_transaction(
+        db,
+        user=manager,
+        type=TransactionType.TASK_REFUND,
+        amount=task.reward,
+        balance_after=manager.balance,
+        task_id=task.id,
+    )
     db.commit()
     db.refresh(task)
     return task
