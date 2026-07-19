@@ -10,7 +10,8 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=False
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False,
+        extra="ignore"
     )
 
 
