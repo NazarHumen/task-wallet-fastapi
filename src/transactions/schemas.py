@@ -6,12 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from src.transactions.models import TransactionType
 
 
-class DepositRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    amount: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
-
-
 class WithdrawRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
