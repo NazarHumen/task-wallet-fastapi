@@ -34,21 +34,6 @@ def get_transaction(db: Session, transaction_id: int) -> Transaction | None:
     return db.get(Transaction, transaction_id)
 
 
-def deposit(db: Session, user: User, amount: Decimal) -> Transaction:
-    user = db.get(User, user.id, with_for_update=True)
-    user.balance += amount
-    transaction = record_transaction(
-        db,
-        user=user,
-        type=TransactionType.DEPOSIT,
-        amount=amount,
-        balance_after=user.balance,
-    )
-    db.commit()
-    db.refresh(transaction)
-    return transaction
-
-
 def withdraw(db: Session, user: User, amount: Decimal) -> Transaction | None:
     user = db.get(User, user.id, with_for_update=True)
     if user.balance < amount:

@@ -3,6 +3,7 @@ from sqladmin import Admin
 from sqlalchemy.engine import Engine
 
 from src.auth.admin import RefreshTokenAdmin, UserAdmin
+from src.payments.admin import PaymentAdmin
 from src.tags.admin import TagAdmin
 from src.tasks.admin import TaskAdmin
 from src.transactions.admin import TransactionAdmin
@@ -13,6 +14,7 @@ admin_views = [
     TaskAdmin,
     TagAdmin,
     TransactionAdmin,
+    PaymentAdmin,
 ]
 
 

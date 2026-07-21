@@ -16,6 +16,13 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+  stripe-cli:
+    image: stripe/stripe-cli
+    command: listen --api-key ${STRIPE_SECRET_KEY} --forward-to backend:8000/payments/webhook
+    env_file:
+      - .env
+    depends_on:
+      - backend
 
   backend:
     container_name: taskwallet-backend
