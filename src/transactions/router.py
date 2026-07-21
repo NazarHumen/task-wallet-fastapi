@@ -3,32 +3,18 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from src.auth.dependencies import get_current_user, require_role
+from src.auth.dependencies import get_current_user
 from src.auth.models import Role, User
 from src.db.database import get_db
 from src.transactions import service
 from src.transactions.models import TransactionType
 from src.transactions.schemas import (
-    DepositRequest,
     TransactionList,
     TransactionRead,
     WithdrawRequest,
 )
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
-
-
-@router.post(
-    "/deposit",
-    response_model=TransactionRead,
-    status_code=status.HTTP_201_CREATED,
-)
-def deposit(
-    data: DepositRequest,
-    db: Session = Depends(get_db),
-    manager: User = Depends(require_role(Role.MANAGER)),
-):
-    return service.deposit(db, manager, data.amount)
 
 
 @router.post(
